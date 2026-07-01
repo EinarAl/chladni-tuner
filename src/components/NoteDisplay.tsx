@@ -9,24 +9,22 @@ export default function NoteDisplay({ note, frequency }: Props) {
   const isDetected = note.name !== '--'
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex items-baseline gap-1">
-        <span className={`text-5xl font-bold tabular-nums ${isDetected ? 'text-white' : 'text-neutral-600'}`}>
+    <div className="flex flex-col items-center gap-1 min-h-[88px] justify-center">
+      <div className="flex items-baseline gap-2">
+        <span className={`text-5xl font-bold tabular-nums tracking-wider ${isDetected ? 'text-white' : 'text-neutral-600'}`}>
           {note.name}
         </span>
         <span className={`text-2xl font-semibold ${isDetected ? 'text-neutral-400' : 'text-neutral-600'}`}>
           {note.octave}
         </span>
       </div>
-      <div className="flex gap-3 text-sm text-neutral-500 font-mono">
-        {frequency && (
-          <span>{frequency.toFixed(1)} Hz</span>
-        )}
-        {isDetected && (
-          <span className={Math.abs(note.cents) < 5 ? 'text-tuned' : 'text-neutral-500'}>
-            {note.cents > 0 ? '+' : ''}{note.cents}¢
-          </span>
-        )}
+      <div className="flex gap-3 text-xs text-neutral-400 font-mono tracking-widest uppercase min-h-[18px]">
+        <span>
+          {frequency ? `${frequency.toFixed(1)} hz` : '-- hz'}
+        </span>
+        <span className={isDetected && Math.abs(note.cents) < 5 ? 'text-tuned' : 'text-neutral-400'}>
+          {isDetected ? `${note.cents > 0 ? '+' : ''}${note.cents}` : '--'} ct
+        </span>
       </div>
     </div>
   )

@@ -2,25 +2,36 @@ interface Props {
   cents: number
 }
 
+const SEGMENTS = 25
+const SEG_WIDTH = 8
+const CENTER = Math.floor(SEGMENTS / 2)
+
 export default function CentMeter({ cents }: Props) {
   const clamped = Math.max(-50, Math.min(50, cents))
-  const position = ((clamped + 50) / 100) * 100
   const inTune = Math.abs(cents) < 5
+  const activeIndex = Math.round(((clamped + 50) / 100) * (SEGMENTS - 1))
+  const lo = Math.min(CENTER, activeIndex)
+  const hi = Math.max(CENTER, activeIndex)
 
   return (
-    <div className="w-full max-w-[400px] mx-auto px-4">
-      <div className="relative h-8 bg-neutral-800 rounded-full overflow-hidden">
-        <div
-          className="absolute top-1 bottom-1 w-2 rounded-full bg-needle transition-all duration-75"
-          style={{ left: `calc(${position}% - 4px)` }}
-        />
-        <div className={`absolute top-0.5 bottom-0.5 left-1/2 w-8 -translate-x-1/2 rounded border transition-colors duration-150 ${
-          inTune ? 'bg-tuned/20 border-tuned' : 'bg-transparent border-neutral-600'
-        }`} />
+    <div className="w-full mx-auto">
+      <div className="relative flex items-center justify-center gap-[2px] h-7">
+        {Array.from({ length: SEGMENTS }, (_, i) => {
+          const isCenter = i === CENTER
+          const isActive = i >= lo && i <= hi
+          const fill = isCenter ? (isActive ? 'bg-white' : 'bg-neutral-500') : isActive ? 'bg-white' : 'bg-neutral-700'
+          return (
+            <div
+              key={i}
+              className={`rounded-sm transition-all duration-75 ${fill}`}
+              style={{ width: SEG_WIDTH, height: isCenter ? 22 : Math.round(8 + (i % 3) * 3) }}
+            />
+          )
+        })}
       </div>
-      <div className="flex justify-between text-xs text-neutral-600 mt-1 px-1">
+      <div className="flex justify-between text-[10px] text-neutral-500 mt-1 font-mono tracking-wider">
         <span>-50</span>
-        <span className={inTune ? 'text-tuned font-medium' : ''}>0</span>
+        <span className={inTune ? 'text-white font-medium' : ''}>0</span>
         <span>+50</span>
       </div>
     </div>

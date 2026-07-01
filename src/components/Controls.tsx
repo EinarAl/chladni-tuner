@@ -13,7 +13,7 @@ const modeBtn =
   'flex items-center justify-center w-12 h-12 rounded-xl text-sm font-medium transition-colors duration-150'
 const disabled = 'disabled:opacity-30 disabled:cursor-not-allowed'
 const stepBtn =
-  `flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium transition-colors duration-150 bg-neutral-800 text-neutral-400 hover:bg-neutral-700 ${disabled}`
+  'flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium transition-colors duration-150 bg-neutral-800 text-neutral-400 hover:bg-neutral-700 disabled:cursor-not-allowed'
 
 function TuningFork({ active }: { active: boolean }) {
   return (
@@ -39,26 +39,31 @@ function Speaker({ active }: { active: boolean }) {
 
 export default function Controls({ mode, onModeChange, onStepUp, onStepDown, onOctaveUp, onOctaveDown }: Props) {
   return (
-    <div className="flex items-center justify-center gap-2 flex-wrap">
+    <div className="flex items-center justify-between gap-2">
       <button
-        className={`${modeBtn} ${mode === 'tuner' ? 'bg-accent' : 'bg-neutral-800 hover:bg-neutral-700'} ${disabled}`}
+        className={`${modeBtn} bg-neutral-800 hover:bg-neutral-700 ${disabled}`}
         onClick={() => onModeChange('tuner')}
       >
         <TuningFork active={mode === 'tuner'} />
       </button>
+
+      <div className={`w-2 h-2 rounded-full transition-all duration-200 ${mode === 'tuner' ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-neutral-700'}`} />
+
+      <div className="flex items-center gap-2">
+        <button className={stepBtn} onClick={onOctaveDown} disabled={mode !== 'sound'}>▼</button>
+        <button className={stepBtn} onClick={onStepDown} disabled={mode !== 'sound'}>−</button>
+        <button className={stepBtn} onClick={onStepUp} disabled={mode !== 'sound'}>+</button>
+        <button className={stepBtn} onClick={onOctaveUp} disabled={mode !== 'sound'}>▲</button>
+      </div>
+
+      <div className={`w-2 h-2 rounded-full transition-all duration-200 ${mode === 'sound' ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-neutral-700'}`} />
+
       <button
-        className={`${modeBtn} ${mode === 'sound' ? 'bg-accent' : 'bg-neutral-800 hover:bg-neutral-700'} ${disabled}`}
+        className={`${modeBtn} bg-neutral-800 hover:bg-neutral-700 ${disabled}`}
         onClick={() => onModeChange('sound')}
       >
         <Speaker active={mode === 'sound'} />
       </button>
-
-      <span className="text-neutral-700 mx-1 select-none">|</span>
-
-      <button className={stepBtn} onClick={onOctaveDown} disabled={mode !== 'sound'}>▼</button>
-      <button className={stepBtn} onClick={onStepDown} disabled={mode !== 'sound'}>−</button>
-      <button className={stepBtn} onClick={onStepUp} disabled={mode !== 'sound'}>+</button>
-      <button className={stepBtn} onClick={onOctaveUp} disabled={mode !== 'sound'}>▲</button>
     </div>
   )
 }
