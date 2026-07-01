@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-device: #1a1a2e;
+  --color-screen: #0f0f1a;
+  --color-accent: #e94560;
+  --color-tuned: #00ff88;
+  --color-needle: #ff4444;
+}
