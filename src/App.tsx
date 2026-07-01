@@ -21,6 +21,7 @@ export default function App() {
   }, [])
 
   const handleModeChange = (newMode: Mode) => {
+    if (newMode === mode) return
     setMode(newMode)
     if (newMode === 'tuner') {
       osc.stop()
