@@ -52,12 +52,22 @@ export function useOscillator() {
   }, [])
 
   const stepUp = useCallback(() => {
-    setFreq(halfStepUp(frequency))
+    const next = halfStepUp(frequency)
+    setFreq(next)
   }, [frequency, setFreq])
 
   const stepDown = useCallback(() => {
-    setFreq(halfStepDown(frequency))
+    const prev = halfStepDown(frequency)
+    setFreq(prev)
   }, [frequency, setFreq])
 
-  return { isPlaying, frequency, note, start, stop, setFrequency: setFreq, stepUp, stepDown }
+  const octaveUp = useCallback(() => {
+    setFreq(frequency * 2)
+  }, [frequency, setFreq])
+
+  const octaveDown = useCallback(() => {
+    setFreq(frequency / 2)
+  }, [frequency, setFreq])
+
+  return { isPlaying, frequency, note, start, stop, setFrequency: setFreq, stepUp, stepDown, octaveUp, octaveDown }
 }

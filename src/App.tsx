@@ -55,6 +55,8 @@ export default function App() {
           onModeChange={handleModeChange}
           onStepUp={osc.stepUp}
           onStepDown={osc.stepDown}
+          onOctaveUp={osc.octaveUp}
+          onOctaveDown={osc.octaveDown}
         />
       }
     />

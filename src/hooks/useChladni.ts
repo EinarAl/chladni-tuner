@@ -1,11 +1,14 @@
 import { useRef, useEffect, useState } from 'react'
 import { computeChladniGrid, frequencyToMode } from '../lib/chladni'
-import { applyDither } from '../lib/dither'
 
 const GRID_SIZE = 256
 
 export function useChladni(frequency: number | null) {
-  const [imageData, setImageData] = useState<ImageData | null>(null)
+  const [state, setState] = useState<{
+    grid: Float32Array | null
+    prevGrid: Float32Array | null
+    transitionStart: number | null
+  }>({ grid: null, prevGrid: null, transitionStart: null })
   const prevRef = useRef<number | null>(null)
   const frameRef = useRef(0)
 
@@ -21,10 +24,15 @@ export function useChladni(frequency: number | null) {
       if (id !== frameRef.current) return
 
       const { n, m } = frequencyToMode(freq)
-      const grid = computeChladniGrid(n, m, GRID_SIZE)
-      setImageData(applyDither(grid, GRID_SIZE))
+      const newGrid = computeChladniGrid(n, m, GRID_SIZE)
+
+      setState(prev => ({
+        grid: newGrid,
+        prevGrid: prev.grid,
+        transitionStart: performance.now(),
+      }))
     })
   }, [frequency])
 
-  return { imageData, gridSize: GRID_SIZE }
+  return { ...state, gridSize: GRID_SIZE }
 }
