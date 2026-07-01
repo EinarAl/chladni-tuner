@@ -1,3 +1,5 @@
+import { motion } from 'motion/react'
+
 type Mode = 'tuner' | 'sound'
 
 interface Props {
@@ -9,11 +11,13 @@ interface Props {
   onOctaveDown: () => void
 }
 
+const btnShadow =
+  '0 -2px 0 rgba(0,0,0,0.3) inset, 0 2px 0 rgba(255,255,255,0.06) inset, 0 4px 8px rgba(0,0,0,0.4)'
 const modeBtn =
-  'flex items-center justify-center w-12 h-12 rounded-xl text-sm font-medium transition-colors duration-150'
+  'flex items-center justify-center w-12 h-12 rounded-xl text-sm font-medium transition-colors duration-150 bg-neutral-800 hover:bg-neutral-700 cursor-pointer'
 const disabled = 'disabled:opacity-30 disabled:cursor-not-allowed'
 const stepBtn =
-  'flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium transition-colors duration-150 bg-neutral-800 text-neutral-400 hover:bg-neutral-700 disabled:cursor-not-allowed'
+  'flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium transition-colors duration-150 bg-neutral-800 text-neutral-400 hover:bg-neutral-700 cursor-pointer disabled:cursor-not-allowed'
 
 function TuningFork({ active }: { active: boolean }) {
   return (
@@ -40,30 +44,34 @@ function Speaker({ active }: { active: boolean }) {
 export default function Controls({ mode, onModeChange, onStepUp, onStepDown, onOctaveUp, onOctaveDown }: Props) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <button
-        className={`${modeBtn} bg-neutral-800 hover:bg-neutral-700 ${disabled}`}
+      <motion.button
+        className={`${modeBtn} ${disabled}`}
+        style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }}
+        whileTap={{ scale: 0.93 }}
         onClick={() => onModeChange('tuner')}
       >
         <TuningFork active={mode === 'tuner'} />
-      </button>
+      </motion.button>
 
       <div className={`w-2 h-2 rounded-full transition-all duration-200 ${mode === 'tuner' ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-neutral-700'}`} />
 
       <div className="flex items-center gap-2">
-        <button className={stepBtn} onClick={onOctaveDown} disabled={mode !== 'sound'}>▼</button>
-        <button className={stepBtn} onClick={onStepDown} disabled={mode !== 'sound'}>−</button>
-        <button className={stepBtn} onClick={onStepUp} disabled={mode !== 'sound'}>+</button>
-        <button className={stepBtn} onClick={onOctaveUp} disabled={mode !== 'sound'}>▲</button>
+        <motion.button className={stepBtn} style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }} whileTap={{ scale: 0.93 }} onClick={onOctaveDown} disabled={mode !== 'sound'}>▼</motion.button>
+        <motion.button className={stepBtn} style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }} whileTap={{ scale: 0.93 }} onClick={onStepDown} disabled={mode !== 'sound'}>−</motion.button>
+        <motion.button className={stepBtn} style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }} whileTap={{ scale: 0.93 }} onClick={onStepUp} disabled={mode !== 'sound'}>+</motion.button>
+        <motion.button className={stepBtn} style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }} whileTap={{ scale: 0.93 }} onClick={onOctaveUp} disabled={mode !== 'sound'}>▲</motion.button>
       </div>
 
       <div className={`w-2 h-2 rounded-full transition-all duration-200 ${mode === 'sound' ? 'bg-green-400 shadow-[0_0_6px_#4ade80]' : 'bg-neutral-700'}`} />
 
-      <button
-        className={`${modeBtn} bg-neutral-800 hover:bg-neutral-700 ${disabled}`}
+      <motion.button
+        className={`${modeBtn} ${disabled}`}
+        style={{ transform: 'translateZ(6px)', boxShadow: btnShadow }}
+        whileTap={{ scale: 0.93 }}
         onClick={() => onModeChange('sound')}
       >
         <Speaker active={mode === 'sound'} />
-      </button>
+      </motion.button>
     </div>
   )
 }
