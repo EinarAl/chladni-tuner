@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useMotionValue, useSpring } from 'motion/react'
 import { usePitchDetection } from './hooks/usePitchDetection'
 import { useOscillator } from './hooks/useOscillator'
-import TunerDevice from './components/TunerDevice'
-import ChladniCanvas from './components/ChladniCanvas'
-import NoteDisplay from './components/NoteDisplay'
-import CentMeter from './components/CentMeter'
-import Controls from './components/Controls'
+import ThreeDevice from './components/ThreeDevice'
 
 type Mode = 'tuner' | 'sound'
 
@@ -34,24 +31,18 @@ export default function App() {
 
   const chladniFreq = mode === 'tuner' ? pitch.frequency : osc.frequency
 
-  const displayNote = mode === 'tuner'
-    ? pitch.note
-    : osc.isPlaying
-      ? osc.note
-      : { name: '--' as const, octave: 0, frequency: 0, cents: 0 }
+  const rollX = useMotionValue(0)
+  const rollY = useMotionValue(0)
+  const smoothRollX = useSpring(rollX, { stiffness: 150, damping: 20 })
+  const smoothRollY = useSpring(rollY, { stiffness: 150, damping: 20 })
 
   return (
-    <TunerDevice
-      chladni={<ChladniCanvas frequency={chladniFreq} />}
-      noteDisplay={
-        <NoteDisplay
-          note={displayNote}
-          frequency={mode === 'tuner' ? pitch.frequency : osc.frequency}
-        />
-      }
-      centMeter={<CentMeter cents={displayNote.cents} />}
-      controls={
-        <Controls
+    <div className="min-h-dvh flex items-center justify-center bg-[#0b1a2e]">
+      <div className="relative w-full max-w-sm" style={{ aspectRatio: '577/917' }}>
+        <ThreeDevice
+          rollX={smoothRollX}
+          rollY={smoothRollY}
+          frequency={chladniFreq}
           mode={mode}
           onModeChange={handleModeChange}
           onStepUp={osc.stepUp}
@@ -59,7 +50,7 @@ export default function App() {
           onOctaveUp={osc.octaveUp}
           onOctaveDown={osc.octaveDown}
         />
-      }
-    />
+      </div>
+    </div>
   )
 }
