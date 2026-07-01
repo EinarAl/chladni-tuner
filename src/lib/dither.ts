@@ -31,15 +31,19 @@ export function applyAnimatedDither(
         raw = prevRaw * (1 - blend) + raw * blend;
       }
 
-      const inverted = 1 - Math.min(1, raw);
+      const clamped = Math.min(1, raw);
+      const inverted = 1 - clamped;
 
-      const noise =
-        boost +
-        Math.sin(x * 0.15 + time * 2.0) * 3 +
-        Math.sin(y * 0.12 + time * 1.7) * 3 +
-        Math.sin((x + y) * 0.08 + time * 2.3) * 2;
+      const s1 = Math.sin(x * 0.02 + y * 0.015 + time * 0.5);
+      const s2 = Math.sin(x * 0.03 - y * 0.025 + time * 0.7);
+      const s3 = Math.sin((x - y) * 0.022 + (x + y) * 0.012 + time * 0.4);
+      const s4 = Math.sin(x * 0.04 + y * 0.035 + time * 0.6);
+      const sum = s1 + s2 + s3 + s4;
+      const noiseScale = 0.5 + clamped * 2.5;
+      const noise = boost + sum * noiseScale;
 
-      const threshold = (BAYER_8[y % 8][x % 8] + noise) / 64;
+      const rawThreshold = BAYER_8[y % 8][x % 8] + noise;
+      const threshold = Math.max(0, rawThreshold) / 64;
       const output = inverted > threshold ? 255 : 0;
 
       const pixelIdx = idx * 4;

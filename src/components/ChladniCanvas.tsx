@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import { useChladni } from '../hooks/useChladni'
 import { applyAnimatedDither } from '../lib/dither'
 
-const TRANSITION_MS = 300
+const TRANSITION_MS = 600
 
 interface Props {
   frequency: number | null
@@ -33,7 +33,7 @@ export default function ChladniCanvas({ frequency }: Props) {
         const dt = performance.now() - transitionStart
         if (dt < TRANSITION_MS) {
           blend = dt / TRANSITION_MS
-          noiseBoost = (1 - blend) * 8
+          noiseBoost = (1 - blend) * 14
         }
       }
 
