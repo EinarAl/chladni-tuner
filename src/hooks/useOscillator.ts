@@ -1,6 +1,9 @@
 import { useRef, useState, useCallback } from 'react'
 import { halfStepUp, halfStepDown, frequencyToNote, type NoteResult } from '../lib/notes'
 
+const MIN_FREQ = 20
+const MAX_FREQ = 2093
+
 export function useOscillator() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [frequency, setFrequency] = useState(440)
@@ -15,7 +18,7 @@ export function useOscillator() {
 
     const osc = ctx.createOscillator()
     osc.type = 'sine'
-    osc.frequency.value = freq
+    osc.frequency.value = Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq))
     oscRef.current = osc
 
     const gain = ctx.createGain()
@@ -26,8 +29,8 @@ export function useOscillator() {
     gain.connect(ctx.destination)
     osc.start()
 
-    setFrequency(freq)
-    setNote(frequencyToNote(freq))
+    setFrequency(osc.frequency.value)
+    setNote(frequencyToNote(osc.frequency.value))
     setIsPlaying(true)
   }, [])
 
@@ -43,22 +46,23 @@ export function useOscillator() {
   }, [])
 
   const setFreq = useCallback((freq: number) => {
+    const clamped = Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq))
     if (oscRef.current && ctxRef.current) {
       const now = ctxRef.current.currentTime
-      oscRef.current.frequency.setTargetAtTime(freq, now, 0.02)
+      oscRef.current.frequency.setTargetAtTime(clamped, now, 0.02)
     }
-    setFrequency(freq)
-    setNote(frequencyToNote(freq))
+    setFrequency(clamped)
+    setNote(frequencyToNote(clamped))
   }, [])
 
   const stepUp = useCallback(() => {
     const next = halfStepUp(frequency)
-    setFreq(next)
+    if (next <= MAX_FREQ) setFreq(next)
   }, [frequency, setFreq])
 
   const stepDown = useCallback(() => {
     const prev = halfStepDown(frequency)
-    setFreq(prev)
+    if (prev >= MIN_FREQ) setFreq(prev)
   }, [frequency, setFreq])
 
   const octaveUp = useCallback(() => {
