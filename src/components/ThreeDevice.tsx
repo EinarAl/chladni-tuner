@@ -164,7 +164,9 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
       ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
       const h = isC ? 26 : 10 + (i % 3) * 3
       const y = my + (isC ? 0 : (26 - h) / 2)
-      ctx.fillRect(mx + i * sw, y, sw - 2, h)
+      ctx.beginPath()
+      ctx.roundRect(mx + i * sw, y, sw - 2, h, 4)
+      ctx.fill()
     }
 
     const tune = Math.abs(note.cents) < 5
