@@ -68,6 +68,53 @@ function Leds({ mode }: { mode: Mode }) {
   )
 }
 
+function ButtonIcon({ id, size, position }: { id: BtnId; size: number; position: [number, number, number] }) {
+  const [tex, setTex] = useState<THREE.CanvasTexture | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/icons/${id}.svg`)
+      .then(r => r.text())
+      .then(svg => {
+        if (cancelled) return
+        const blob = new Blob([svg], { type: 'image/svg+xml' })
+        const url = URL.createObjectURL(blob)
+        const img = new Image()
+        img.onload = () => {
+          if (cancelled) { URL.revokeObjectURL(url); return }
+          const canvas = document.createElement('canvas')
+          canvas.width = size
+          canvas.height = size
+          const ctx = canvas.getContext('2d')!
+          const adj: Record<string, { sc?: number; dy?: number }> = { sound: { sc: 0.7 }, octUp: { dy: 4 }, octDown: { dy: -4 } }
+          const a = adj[id] ?? {}
+          const iconScale = a.sc ?? 0.85
+          const scale = Math.min(size / img.width, size / img.height) * iconScale
+          const w = Math.round(img.width * scale)
+          const h = Math.round(img.height * scale)
+          const oy = Math.round((size - h) / 2) + (a.dy ?? 0)
+          ctx.drawImage(img, Math.round((size - w) / 2), oy, w, h)
+          URL.revokeObjectURL(url)
+          const t = new THREE.CanvasTexture(canvas)
+          t.needsUpdate = true
+          setTex(t)
+        }
+        img.onerror = () => { URL.revokeObjectURL(url) }
+        img.src = url
+      })
+    return () => { cancelled = true }
+  }, [id, size])
+
+  if (!tex) return null
+
+  return (
+    <mesh position={position}>
+      <planeGeometry args={[size, size]} />
+      <meshBasicMaterial map={tex} transparent depthWrite={false} />
+    </mesh>
+  )
+}
+
 const TX = 1024, TY = 1460
 const TOP_OFFSET = 72
 const CONTENT_BTM = 1420
@@ -298,18 +345,21 @@ function SceneContent(props: Props) {
         </mesh>
         <Leds mode={mode} />
         {[
-          { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(801 + 73 / 2)], action: () => onModeChange('tuner') },
-          { id: 'sound' as BtnId, geo: bigBtnGeo, pos: [sx(480 + 73 / 2), sy(801 + 73 / 2)], action: () => onModeChange('sound') },
-          { id: 'octUp' as BtnId, geo: smallBtnGeo, pos: [sx(354 + 49 / 2), sy(812 + 49 / 2)], action: () => onOctaveUp() },
-          { id: 'stepUp' as BtnId, geo: smallBtnGeo, pos: [sx(294 + 49 / 2), sy(812 + 49 / 2)], action: () => onStepUp() },
-          { id: 'stepDown' as BtnId, geo: smallBtnGeo, pos: [sx(234 + 49 / 2), sy(812 + 49 / 2)], action: () => onStepDown() },
-          { id: 'octDown' as BtnId, geo: smallBtnGeo, pos: [sx(174 + 49 / 2), sy(812 + 49 / 2)], action: () => onOctaveDown() },
+          { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(801 + 73 / 2)], iconSize: 40, action: () => onModeChange('tuner') },
+          { id: 'sound' as BtnId, geo: bigBtnGeo, pos: [sx(480 + 73 / 2), sy(801 + 73 / 2)], iconSize: 40, action: () => onModeChange('sound') },
+          { id: 'octUp' as BtnId, geo: smallBtnGeo, pos: [sx(354 + 49 / 2), sy(812 + 49 / 2)], iconSize: 28, action: () => onOctaveUp() },
+          { id: 'stepUp' as BtnId, geo: smallBtnGeo, pos: [sx(294 + 49 / 2), sy(812 + 49 / 2)], iconSize: 28, action: () => onStepUp() },
+          { id: 'stepDown' as BtnId, geo: smallBtnGeo, pos: [sx(234 + 49 / 2), sy(812 + 49 / 2)], iconSize: 28, action: () => onStepDown() },
+          { id: 'octDown' as BtnId, geo: smallBtnGeo, pos: [sx(174 + 49 / 2), sy(812 + 49 / 2)], iconSize: 28, action: () => onOctaveDown() },
         ].map(b => (
-          <mesh key={b.id} geometry={b.geo} position={[b.pos[0], b.pos[1], SURFACE_Z + (pressedBtn === b.id ? -3 : 0)]}
-            onPointerDown={(e) => { e.stopPropagation(); buttonHitRef.current = true; setPressedBtn(b.id); b.action() }}
-            onPointerUp={() => setPressedBtn(null)} onPointerLeave={() => setPressedBtn(null)}>
-            <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
-          </mesh>
+          <group key={b.id}>
+            <mesh geometry={b.geo} position={[b.pos[0], b.pos[1], SURFACE_Z + (pressedBtn === b.id ? -3 : 0)]}
+              onPointerDown={(e) => { e.stopPropagation(); buttonHitRef.current = true; setPressedBtn(b.id); b.action() }}
+              onPointerUp={() => setPressedBtn(null)} onPointerLeave={() => setPressedBtn(null)}>
+              <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
+            </mesh>
+            <ButtonIcon id={b.id} size={b.iconSize} position={[b.pos[0], b.pos[1], SURFACE_Z + 25]} />
+          </group>
         ))}
         <ScreenCanvas frequency={frequency} />
       </group>
