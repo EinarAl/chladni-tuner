@@ -357,7 +357,7 @@ function SceneContent(props: Props) {
               onPointerUp={() => setPressedBtn(null)} onPointerLeave={() => setPressedBtn(null)}>
               <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
             </mesh>
-            <ButtonIcon id={b.id} size={b.iconSize} position={[b.pos[0], b.pos[1], SURFACE_Z + 25]} />
+            <ButtonIcon id={b.id} size={b.iconSize} position={[b.pos[0], b.pos[1], SURFACE_Z + 25 + (pressedBtn === b.id ? -3 : 0)]} />
           </group>
         ))}
         <ScreenCanvas frequency={frequency} />
