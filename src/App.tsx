@@ -31,7 +31,7 @@ export default function App() {
 
   const chladniFreq = mode === 'tuner' ? pitch.frequency : osc.frequency
 
-  const rollX = useMotionValue(0)
+  const rollX = useMotionValue(-8)
   const rollY = useMotionValue(0)
   const smoothRollX = useSpring(rollX, { stiffness: 150, damping: 20 })
   const smoothRollY = useSpring(rollY, { stiffness: 150, damping: 20 })

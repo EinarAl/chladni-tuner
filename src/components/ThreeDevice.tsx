@@ -257,8 +257,9 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
       const isA = ok && i >= lo && i <= hi
       ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
       const centerH = 56
-      const h = isC ? centerH : Math.round(36 + (i % 3) * 8)
-      const y = my + (isC ? 0 : (centerH - h) / 2)
+      const d = Math.abs(i - ctr)
+      const h = d === 0 ? centerH : Math.round(52 - ((d - 1) % 3) * 8)
+      const y = my + (d === 0 ? 0 : (centerH - h) / 2)
       const r = (sw - 2) / 2
       ctx.beginPath()
       ctx.roundRect(mx + i * sw, y, sw - 2, h, r)
@@ -378,7 +379,6 @@ export default function ThreeDevice(props: Props) {
       <color attach="background" args={['#0b1a2e']} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[5, 5, 8]} intensity={1.5} />
-      <directionalLight position={[-4, -3, 5]} intensity={0.5} color="#4477ff" />
       <directionalLight position={[0, 0, -5]} intensity={0.6} color="#ffffff" />
       <SceneContent {...props} />
     </Canvas>
