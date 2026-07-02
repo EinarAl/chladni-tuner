@@ -56,24 +56,30 @@ type BtnId = 'tuner' | 'sound' | 'stepUp' | 'stepDown' | 'octUp' | 'octDown'
 function Leds({ mode }: { mode: Mode }) {
   return (
     <group>
-      <mesh position={[sx(135.5), sy(851.5), SURFACE_Z - 4]}>
+      <mesh position={[sx(135.5), sy(837.5), SURFACE_Z - 4]}>
         <sphereGeometry args={[7, 24, 16]} />
-        <meshPhysicalMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={mode === 'tuner' ? 0.6 : 0} metalness={0.15} roughness={0.35} />
+        <meshPhysicalMaterial color={mode === 'tuner' ? '#00ff88' : '#003322'} emissive="#00ff88" emissiveIntensity={mode === 'tuner' ? 0.6 : 0} metalness={0.15} roughness={0.35} />
       </mesh>
-      <mesh position={[sx(441.5), sy(851.5), SURFACE_Z - 4]}>
+      <mesh position={[sx(441.5), sy(837.5), SURFACE_Z - 4]}>
         <sphereGeometry args={[7, 24, 16]} />
-        <meshPhysicalMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={mode === 'sound' ? 0.6 : 0} metalness={0.15} roughness={0.35} />
+        <meshPhysicalMaterial color={mode === 'sound' ? '#00ff88' : '#003322'} emissive="#00ff88" emissiveIntensity={mode === 'sound' ? 0.6 : 0} metalness={0.15} roughness={0.35} />
       </mesh>
     </group>
   )
 }
 
 const TX = 1024, TY = 1460
+const TOP_OFFSET = 72
+const CONTENT_BTM = 1420
+const CROP_RATIO = CONTENT_BTM / TY
+const SCREEN_W = 527
+const SCREEN_H = 752
+const SCREEN_H_NEW = Math.round(SCREEN_H * CROP_RATIO)
 const SEG = 25
 
 function ScreenCanvas({ frequency }: { frequency: number | null }) {
   const t0 = useRef(performance.now())
-  const note = frequencyToNote(frequency ?? 82)
+  const note = frequencyToNote(frequency ?? 0)
   const { grid, prevGrid, transitionStart, gridSize } = useChladni(frequency)
 
   const canvas = useMemo(() => {
@@ -95,6 +101,7 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     t.magFilter = THREE.NearestFilter
     t.minFilter = THREE.LinearFilter
     t.colorSpace = THREE.SRGBColorSpace
+    t.repeat.set(1, CROP_RATIO)
     t.needsUpdate = true
     return t
   }, [canvas])
@@ -127,13 +134,13 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
         if (tc) {
           tc.putImageData(img, 0, 0)
           ctx.imageSmoothingEnabled = false
-          ctx.drawImage(tmp, cP, cP, cSize, cSize)
+          ctx.drawImage(tmp, cP, cP + TOP_OFFSET, cSize, cSize)
         }
       }
     }
 
     const ok = note.name !== '--'
-    const ny = cP + cSize + 24
+    const ny = cP + cSize + 50 + TOP_OFFSET
 
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left'
@@ -200,18 +207,19 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
 
     for (let i = 0; i < SEG; i++) {
       const isC = i === ctr
-      const isA = i >= lo && i <= hi
+      const isA = ok && i >= lo && i <= hi
       ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
-      const h = isC ? 48 : Math.round(36 + (i % 3) * 8)
-      const y = my + (isC ? 0 : (48 - h) / 2)
+      const centerH = 56
+      const h = isC ? centerH : Math.round(36 + (i % 3) * 8)
+      const y = my + (isC ? 0 : (centerH - h) / 2)
       const r = (sw - 2) / 2
       ctx.beginPath()
       ctx.roundRect(mx + i * sw, y, sw - 2, h, r)
       ctx.fill()
     }
 
-    const tune = Math.abs(note.cents) < 5
-    ctx.font = '15px ui-monospace, monospace'
+    const tune = ok && Math.abs(note.cents) < 5
+    ctx.font = '20px ui-monospace, monospace'
     ctx.textAlign = 'left'
     ctx.fillStyle = '#737373'
     ctx.fillText('-50', mx, my + 54)
@@ -226,9 +234,9 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
   })
 
   return (
-    <mesh position={[sx(26 + 527 / 2), sy(26 + 752 / 2), SURFACE_Z + 3]}>
-      <boxGeometry args={[527, 752, 2]} />
-      <meshBasicMaterial map={tex} />
+    <mesh position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H_NEW / 2), SURFACE_Z + 3]}>
+      <planeGeometry args={[SCREEN_W, SCREEN_H_NEW]} />
+      <meshBasicMaterial map={tex} side={THREE.DoubleSide} />
     </mesh>
   )
 }
@@ -290,12 +298,12 @@ function SceneContent(props: Props) {
         </mesh>
         <Leds mode={mode} />
         {[
-          { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(815 + 73 / 2)], action: () => onModeChange('tuner') },
-          { id: 'sound' as BtnId, geo: bigBtnGeo, pos: [sx(480 + 73 / 2), sy(815 + 73 / 2)], action: () => onModeChange('sound') },
-          { id: 'octUp' as BtnId, geo: smallBtnGeo, pos: [sx(354 + 49 / 2), sy(826 + 49 / 2)], action: () => onOctaveUp() },
-          { id: 'stepUp' as BtnId, geo: smallBtnGeo, pos: [sx(294 + 49 / 2), sy(826 + 49 / 2)], action: () => onStepUp() },
-          { id: 'stepDown' as BtnId, geo: smallBtnGeo, pos: [sx(234 + 49 / 2), sy(826 + 49 / 2)], action: () => onStepDown() },
-          { id: 'octDown' as BtnId, geo: smallBtnGeo, pos: [sx(174 + 49 / 2), sy(826 + 49 / 2)], action: () => onOctaveDown() },
+          { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(801 + 73 / 2)], action: () => onModeChange('tuner') },
+          { id: 'sound' as BtnId, geo: bigBtnGeo, pos: [sx(480 + 73 / 2), sy(801 + 73 / 2)], action: () => onModeChange('sound') },
+          { id: 'octUp' as BtnId, geo: smallBtnGeo, pos: [sx(354 + 49 / 2), sy(812 + 49 / 2)], action: () => onOctaveUp() },
+          { id: 'stepUp' as BtnId, geo: smallBtnGeo, pos: [sx(294 + 49 / 2), sy(812 + 49 / 2)], action: () => onStepUp() },
+          { id: 'stepDown' as BtnId, geo: smallBtnGeo, pos: [sx(234 + 49 / 2), sy(812 + 49 / 2)], action: () => onStepDown() },
+          { id: 'octDown' as BtnId, geo: smallBtnGeo, pos: [sx(174 + 49 / 2), sy(812 + 49 / 2)], action: () => onOctaveDown() },
         ].map(b => (
           <mesh key={b.id} geometry={b.geo} position={[b.pos[0], b.pos[1], SURFACE_Z + (pressedBtn === b.id ? -3 : 0)]}
             onPointerDown={(e) => { e.stopPropagation(); buttonHitRef.current = true; setPressedBtn(b.id); b.action() }}
