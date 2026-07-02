@@ -1,10 +1,12 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { MotionValue } from 'motion/react'
-import { useChladni } from '../hooks/useChladni'
-import { applyAnimatedDither } from '../lib/dither'
 import { frequencyToNote } from '../lib/notes'
+import ChladniCanvas from './ChladniCanvas'
+import NoteDisplay from './NoteDisplay'
+import CentMeter from './CentMeter'
 
 type Mode = 'tuner' | 'sound'
 
@@ -49,7 +51,7 @@ function extrudeGeo(w: number, h: number, r: number, d: number) {
 }
 
 const bodyGeo = extrudeGeo(SW, SH, 25, BODY_DEPTH)
-const screenGeo = extrudeGeo(SCREEN_W, SCREEN_H, 25, 10)
+// const screenGeo = extrudeGeo(SCREEN_W, SCREEN_H, 25, 10)
 const bigBtnGeo = extrudeGeo(73, 73, 15, 20)
 const smallBtnGeo = extrudeGeo(49, 49, 10, 20)
 
@@ -70,16 +72,25 @@ function Leds({ mode }: { mode: Mode }) {
   )
 }
 
-function SceneContent({
-  rollX, rollY, mode, onModeChange, onStepUp, onStepDown, onOctaveUp, onOctaveDown,
-  grid, frequency,
-  pixels, texture,
-}: Props & {
-  grid: Float32Array | null
-  frequency: number | null
-  pixels: Uint8Array
-  texture: THREE.DataTexture
-}) {
+function ScreenHtml({ frequency }: { frequency: number | null }) {
+  const note = frequencyToNote(frequency ?? 82)
+  return (
+    <div className="w-full h-full flex flex-col p-[4.5%] pb-0 pt-[2.8%]">
+      <div className="flex-1 bg-[#0a0a14] rounded-2xl border border-white/5 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 p-4 pb-0">
+          <ChladniCanvas frequency={frequency} />
+        </div>
+        <div className="px-4 py-3 space-y-2">
+          <NoteDisplay note={note} frequency={frequency} />
+          <CentMeter cents={note.cents} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SceneContent(props: Props) {
+  const { rollX, rollY, frequency, mode, onModeChange, onStepUp, onStepDown, onOctaveUp, onOctaveDown } = props
   const rotatorRef = useRef<THREE.Group>(null)
   const { viewport, gl } = useThree()
   const [pressedBtn, setPressedBtn] = useState<BtnId | null>(null)
@@ -122,102 +133,9 @@ function SceneContent({
   }, [gl, rollX, rollY])
 
   useFrame(() => {
-    try {
-      if (!rotatorRef.current) return
-      rotatorRef.current.rotation.x = rollX.get() * (Math.PI / 180)
-      rotatorRef.current.rotation.y = rollY.get() * (Math.PI / 180)
-
-      // Fill background
-      for (let i = 0; i < pixels.length; i += 4) {
-        pixels[i] = 10; pixels[i+1] = 10; pixels[i+2] = 20; pixels[i+3] = 255
-      }
-
-      // Chladni
-      if (grid) {
-        const dithered = applyAnimatedDither(grid, 256, performance.now() / 1000)
-        const ox = (SCREEN_W - 256) / 2, oy = 20
-        for (let y = 0; y < 256; y++) {
-          const dy = oy + y
-          if (dy < 0 || dy >= SCREEN_H) continue
-          for (let x = 0; x < 256; x++) {
-            const dx = ox + x
-            if (dx < 0 || dx >= SCREEN_W) continue
-            const si = (y * 256 + x) * 4
-            const di = (dy * SCREEN_W + dx) * 4
-            const v = dithered.data[si]
-            pixels[di] = v; pixels[di+1] = v; pixels[di+2] = v; pixels[di+3] = 255
-          }
-        }
-      }
-
-      // Note info
-      const note = frequencyToNote(frequency ?? 82)
-      const baseY = 20 + 256 + 50
-      const noteStr = `${note.name} ${note.octave}`
-      const freqStr = note.frequency > 0 ? `${note.frequency.toFixed(1)} hz` : '-- hz'
-      const centStr = note.name !== '--' ? `${note.cents > 0 ? '+' : ''}${note.cents} ct` : '-- ct'
-
-      // Simple text rasterization via temp canvas
-      const tc = document.createElement('canvas')
-      tc.width = SCREEN_W; tc.height = SCREEN_H
-      const tctx = tc.getContext('2d')!
-
-      tctx.font = 'bold 42px system-ui, sans-serif'
-      tctx.fillStyle = '#ffffff'
-      tctx.textAlign = 'center'
-      tctx.textBaseline = 'middle'
-      tctx.fillText(noteStr, SCREEN_W / 2, baseY)
-
-      tctx.font = '13px ui-monospace, monospace'
-      tctx.fillStyle = '#a3a3a3'
-      tctx.fillText(freqStr, SCREEN_W / 2, baseY + 40)
-
-      tctx.fillStyle = '#00ff88'
-      tctx.fillText(centStr, SCREEN_W / 2, baseY + 60)
-
-      // Cent meter
-      const centerIdx = 12
-      const clamped = Math.max(-50, Math.min(50, note.cents))
-      const activeIdx = Math.round(((clamped + 50) / 100) * 24)
-      const lo = Math.min(centerIdx, activeIdx)
-      const hi = Math.max(centerIdx, activeIdx)
-      const barY = SCREEN_H - 70
-      const segs = 25, gap = 3, segW = 12
-      const totalW = segs * segW + (segs - 1) * gap
-      const startX = (SCREEN_W - totalW) / 2
-      for (let i = 0; i < segs; i++) {
-        const on = i >= lo && i <= hi
-        const isC = i === centerIdx
-        const h = isC ? 28 : Math.round(12 + (i % 3) * 4)
-        const color = isC ? (on ? '#ffffff' : '#555555') : on ? '#ffffff' : '#333333'
-        tctx.fillStyle = color
-        tctx.fillRect(startX + i * (segW + gap), barY - h / 2, segW, h)
-      }
-
-      // Labels
-      tctx.font = '10px ui-monospace, monospace'
-      tctx.fillStyle = '#555555'
-      tctx.textAlign = 'center'
-      tctx.textBaseline = 'top'
-      tctx.fillText('-50', startX, barY + 24)
-      tctx.fillText('0', SCREEN_W / 2, barY + 24)
-      tctx.fillText('+50', startX + totalW, barY + 24)
-
-      // Copy text canvas pixels into texture array (alpha blend)
-      const srcData = tctx.getImageData(0, 0, SCREEN_W, SCREEN_H).data
-      for (let i = 3; i < srcData.length; i += 4) {
-        if (srcData[i] > 128) {
-          pixels[i - 3] = srcData[i - 3]
-          pixels[i - 2] = srcData[i - 2]
-          pixels[i - 1] = srcData[i - 1]
-          pixels[i] = 255
-        }
-      }
-
-      texture.needsUpdate = true
-    } catch (e) {
-      console.error('useFrame error:', e)
-    }
+    if (!rotatorRef.current) return
+    rotatorRef.current.rotation.x = rollX.get() * (Math.PI / 180)
+    rotatorRef.current.rotation.y = rollY.get() * (Math.PI / 180)
   })
 
   return (
@@ -226,9 +144,9 @@ function SceneContent({
         <mesh geometry={bodyGeo} position={[0, 0, BODY_Z]}>
           <meshPhysicalMaterial color="#1a1a2e" metalness={0.3} roughness={0.4} clearcoat={0.1} side={THREE.DoubleSide} />
         </mesh>
-        <mesh geometry={screenGeo} position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H / 2), SURFACE_Z - 9.9]}>
-          <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
-        </mesh>
+        {/* <mesh geometry={screenGeo} position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H / 2), SURFACE_Z]}>
+          <meshBasicMaterial color="#0f0f1a" side={THREE.DoubleSide} />
+        </mesh> */}
         <Leds mode={mode} />
         {[
           { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(815 + 73 / 2)], action: () => onModeChange('tuner') },
@@ -244,24 +162,28 @@ function SceneContent({
             <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
           </mesh>
         ))}
+        <Html
+          transform
+          center
+          position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H / 2), SURFACE_Z + 1]}
+          scale={37}
+        >
+          <div style={{
+            width: SCREEN_W,
+            height: SCREEN_H,
+            background: '#0b0b18',
+            borderRadius: 25,
+            pointerEvents: 'none',
+          }}>
+            <ScreenHtml frequency={frequency} />
+          </div>
+        </Html>
       </group>
     </group>
   )
 }
 
 export default function ThreeDevice(props: Props) {
-  const { grid } = useChladni(props.frequency)
-
-  const [pixels] = useState(() => new Uint8Array(SCREEN_W * SCREEN_H * 4))
-  const [screenTex] = useState(() => {
-    const t = new THREE.DataTexture(pixels, SCREEN_W, SCREEN_H, THREE.RGBAFormat)
-    t.colorSpace = THREE.SRGBColorSpace
-    t.minFilter = THREE.LinearFilter
-    t.magFilter = THREE.LinearFilter
-    t.generateMipmaps = false
-    return t
-  })
-
   return (
     <Canvas
       camera={{ position: [0, 0, 500], fov: 50, near: 1, far: 2000 }}
@@ -274,12 +196,7 @@ export default function ThreeDevice(props: Props) {
       <directionalLight position={[5, 5, 8]} intensity={1.5} />
       <directionalLight position={[-4, -3, 5]} intensity={0.5} color="#4477ff" />
       <directionalLight position={[0, 0, -5]} intensity={0.6} color="#ffffff" />
-      <SceneContent
-        {...props}
-        grid={grid}
-        pixels={pixels}
-        texture={screenTex}
-      />
+      <SceneContent {...props} />
     </Canvas>
   )
 }
