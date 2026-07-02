@@ -1,12 +1,10 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { MotionValue } from 'motion/react'
 import { frequencyToNote } from '../lib/notes'
-import ChladniCanvas from './ChladniCanvas'
-import NoteDisplay from './NoteDisplay'
-import CentMeter from './CentMeter'
+import { useChladni } from '../hooks/useChladni'
+import { applyAnimatedDither } from '../lib/dither'
 
 type Mode = 'tuner' | 'sound'
 
@@ -24,7 +22,6 @@ interface Props {
 
 const SW = 577, SH = 917
 const BODY_Z = 0, BODY_DEPTH = 60, SURFACE_Z = BODY_Z + BODY_DEPTH
-const SCREEN_W = 527, SCREEN_H = 752
 
 function sx(v: number) { return v - SW / 2 }
 function sy(v: number) { return -(v - SH / 2) }
@@ -51,7 +48,6 @@ function extrudeGeo(w: number, h: number, r: number, d: number) {
 }
 
 const bodyGeo = extrudeGeo(SW, SH, 25, BODY_DEPTH)
-// const screenGeo = extrudeGeo(SCREEN_W, SCREEN_H, 25, 10)
 const bigBtnGeo = extrudeGeo(73, 73, 15, 20)
 const smallBtnGeo = extrudeGeo(49, 49, 10, 20)
 
@@ -72,20 +68,125 @@ function Leds({ mode }: { mode: Mode }) {
   )
 }
 
-function ScreenHtml({ frequency }: { frequency: number | null }) {
+const TX = 1024, TY = 1460
+const SEG = 25
+
+function ScreenCanvas({ frequency }: { frequency: number | null }) {
+  const t0 = useRef(performance.now())
   const note = frequencyToNote(frequency ?? 82)
+  const { grid, prevGrid, transitionStart, gridSize } = useChladni(frequency)
+
+  const canvas = useMemo(() => {
+    const c = document.createElement('canvas')
+    c.width = TX
+    c.height = TY
+    return c
+  }, [])
+
+  const tmp = useMemo(() => {
+    const c = document.createElement('canvas')
+    c.width = gridSize
+    c.height = gridSize
+    return c
+  }, [gridSize])
+
+  const tex = useMemo(() => {
+    const t = new THREE.CanvasTexture(canvas)
+    t.magFilter = THREE.NearestFilter
+    t.minFilter = THREE.NearestFilter
+    t.colorSpace = THREE.SRGBColorSpace
+    t.needsUpdate = true
+    return t
+  }, [canvas])
+
+  useFrame(() => {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, TX, TY)
+    ctx.fillStyle = '#0d0d1a'
+    ctx.fillRect(0, 0, TX, TY)
+
+    if (grid) {
+      const elapsed = (performance.now() - t0.current) / 1000
+      let blend: number | undefined
+      let noise: number | undefined
+      if (prevGrid && transitionStart !== null) {
+        const dt = performance.now() - transitionStart
+        if (dt < 600) {
+          blend = dt / 600
+          noise = (1 - blend) * 14
+        }
+      }
+      const img = applyAnimatedDither(grid, gridSize, elapsed, prevGrid, blend, noise)
+      if (img) {
+        const tc = tmp.getContext('2d')
+        if (tc) {
+          tc.putImageData(img, 0, 0)
+          ctx.imageSmoothingEnabled = false
+          ctx.drawImage(tmp, 0, 0, TX, TX)
+        }
+      }
+    }
+
+    const ok = note.name !== '--'
+    const ny = TX + 40
+
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+
+    ctx.font = 'bold 80px system-ui, sans-serif'
+    ctx.fillStyle = ok ? '#ffffff' : '#525252'
+    ctx.fillText(`${note.name}${note.octave}`, TX / 2, ny)
+
+    ctx.font = '32px ui-monospace, monospace'
+    ctx.fillStyle = '#a3a3a3'
+    ctx.fillText(frequency ? `${frequency.toFixed(1)} hz` : '-- hz', TX / 2, ny + 95)
+
+    ctx.font = '28px ui-monospace, monospace'
+    const ct = ok ? `${note.cents > 0 ? '+' : ''}${note.cents} ct` : '-- ct'
+    ctx.fillStyle = ok && Math.abs(note.cents) < 5 ? '#22c55e' : '#a3a3a3'
+    ctx.fillText(ct, TX / 2, ny + 140)
+
+    const my = ny + 200
+    const sw = Math.floor(TX * 0.72 / SEG)
+    const mw = sw * SEG
+    const mx = (TX - mw) / 2
+    const ctr = Math.floor(SEG / 2)
+    const cl = Math.max(-50, Math.min(50, note.cents))
+    const ai = Math.round(((cl + 50) / 100) * (SEG - 1))
+    const lo = Math.min(ctr, ai)
+    const hi = Math.max(ctr, ai)
+
+    for (let i = 0; i < SEG; i++) {
+      const isC = i === ctr
+      const isA = i >= lo && i <= hi
+      ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
+      const h = isC ? 26 : 10 + (i % 3) * 3
+      const y = my + (isC ? 0 : (26 - h) / 2)
+      ctx.fillRect(mx + i * sw, y, sw - 2, h)
+    }
+
+    const tune = Math.abs(note.cents) < 5
+    ctx.font = '14px ui-monospace, monospace'
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#737373'
+    ctx.fillText('-50', mx, my + 34)
+    ctx.textAlign = 'center'
+    ctx.fillStyle = tune ? '#ffffff' : '#737373'
+    ctx.fillText('0', TX / 2, my + 34)
+    ctx.textAlign = 'right'
+    ctx.fillStyle = '#737373'
+    ctx.fillText('+50', mx + mw, my + 34)
+
+    tex.needsUpdate = true
+  })
+
   return (
-    <div className="w-full h-full flex flex-col p-[4.5%] pb-0 pt-[2.8%]">
-      <div className="flex-1 bg-[#0a0a14] rounded-2xl border border-white/5 overflow-hidden flex flex-col min-h-0">
-        <div className="flex-1 p-4 pb-0">
-          <ChladniCanvas frequency={frequency} />
-        </div>
-        <div className="px-4 py-3 space-y-2">
-          <NoteDisplay note={note} frequency={frequency} />
-          <CentMeter cents={note.cents} />
-        </div>
-      </div>
-    </div>
+    <mesh position={[sx(26 + 527 / 2), sy(26 + 752 / 2), SURFACE_Z + 3]}>
+      <boxGeometry args={[527, 752, 2]} />
+      <meshBasicMaterial map={tex} />
+    </mesh>
   )
 }
 
@@ -144,9 +245,6 @@ function SceneContent(props: Props) {
         <mesh geometry={bodyGeo} position={[0, 0, BODY_Z]}>
           <meshPhysicalMaterial color="#1a1a2e" metalness={0.3} roughness={0.4} clearcoat={0.1} side={THREE.DoubleSide} />
         </mesh>
-        {/* <mesh geometry={screenGeo} position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H / 2), SURFACE_Z]}>
-          <meshBasicMaterial color="#0f0f1a" side={THREE.DoubleSide} />
-        </mesh> */}
         <Leds mode={mode} />
         {[
           { id: 'tuner' as BtnId, geo: bigBtnGeo, pos: [sx(24 + 73 / 2), sy(815 + 73 / 2)], action: () => onModeChange('tuner') },
@@ -162,22 +260,7 @@ function SceneContent(props: Props) {
             <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
           </mesh>
         ))}
-        <Html
-          transform
-          center
-          position={[sx(26 + SCREEN_W / 2), sy(26 + SCREEN_H / 2), SURFACE_Z + 1]}
-          scale={37}
-        >
-          <div style={{
-            width: SCREEN_W,
-            height: SCREEN_H,
-            background: '#0b0b18',
-            borderRadius: 25,
-            pointerEvents: 'none',
-          }}>
-            <ScreenHtml frequency={frequency} />
-          </div>
-        </Html>
+        <ScreenCanvas frequency={frequency} />
       </group>
     </group>
   )
