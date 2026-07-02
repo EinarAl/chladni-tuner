@@ -93,7 +93,7 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
   const tex = useMemo(() => {
     const t = new THREE.CanvasTexture(canvas)
     t.magFilter = THREE.NearestFilter
-    t.minFilter = THREE.NearestFilter
+    t.minFilter = THREE.LinearFilter
     t.colorSpace = THREE.SRGBColorSpace
     t.needsUpdate = true
     return t

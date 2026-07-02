@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { computeChladniGrid, frequencyToMode } from '../lib/chladni'
 
-const GRID_SIZE = 256
+const GRID_SIZE = 128
 
 export function useChladni(frequency: number | null) {
   const [state, setState] = useState<{
