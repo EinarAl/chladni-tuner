@@ -37,20 +37,18 @@ export default function App() {
   const smoothRollY = useSpring(rollY, { stiffness: 150, damping: 20 })
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-[#0b1a2e]">
-      <div className="relative w-full max-w-sm" style={{ aspectRatio: '577/917' }}>
-        <ThreeDevice
-          rollX={smoothRollX}
-          rollY={smoothRollY}
-          frequency={chladniFreq}
-          mode={mode}
-          onModeChange={handleModeChange}
-          onStepUp={osc.stepUp}
-          onStepDown={osc.stepDown}
-          onOctaveUp={osc.octaveUp}
-          onOctaveDown={osc.octaveDown}
-        />
-      </div>
+    <div className="h-dvh w-full bg-[#0b1a2e]">
+      <ThreeDevice
+        rollX={smoothRollX}
+        rollY={smoothRollY}
+        frequency={chladniFreq}
+        mode={mode}
+        onModeChange={handleModeChange}
+        onStepUp={osc.stepUp}
+        onStepDown={osc.stepDown}
+        onOctaveUp={osc.octaveUp}
+        onOctaveDown={osc.octaveDown}
+      />
     </div>
   )
 }

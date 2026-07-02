@@ -107,6 +107,9 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     ctx.fillStyle = '#0d0d1a'
     ctx.fillRect(0, 0, TX, TY)
 
+    const cSize = Math.round(TY * 0.6)
+    const cP = (TX - cSize) / 2
+
     if (grid) {
       const elapsed = (performance.now() - t0.current) / 1000
       let blend: number | undefined
@@ -124,32 +127,69 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
         if (tc) {
           tc.putImageData(img, 0, 0)
           ctx.imageSmoothingEnabled = false
-          ctx.drawImage(tmp, 0, 0, TX, TX)
+          ctx.drawImage(tmp, cP, cP, cSize, cSize)
         }
       }
     }
 
     const ok = note.name !== '--'
-    const ny = TX + 40
+    const ny = cP + cSize + 24
 
+    ctx.textBaseline = 'top'
+    ctx.textAlign = 'left'
+
+    if (ok) {
+      let base = note.name
+      let acc = ''
+      if (note.name.length >= 2 && (note.name[1] === '#' || note.name[1] === 'b')) {
+        base = note.name[0]
+        acc = note.name[1]
+      }
+      const octStr = String(note.octave)
+
+      ctx.font = 'bold 80px system-ui, sans-serif'
+      const baseW = ctx.measureText(base).width
+      ctx.font = 'bold 44px system-ui, sans-serif'
+      const accW = acc ? ctx.measureText(acc).width : 0
+      const octW = ctx.measureText(octStr).width
+
+      const gap = 8
+      const totalW = baseW + (acc ? accW + gap : 0) + octW + gap
+      const sx = TX / 2 - totalW / 2
+
+      ctx.font = 'bold 80px system-ui, sans-serif'
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(base, sx, ny)
+
+      if (acc) {
+        ctx.font = 'bold 44px system-ui, sans-serif'
+        ctx.fillStyle = '#ffffff'
+        ctx.fillText(acc, sx + baseW + gap, ny - 6)
+      }
+
+      ctx.font = 'bold 44px system-ui, sans-serif'
+      ctx.fillStyle = '#a3a3a3'
+      ctx.fillText(octStr, sx + baseW + (acc ? accW + gap : 0) + gap, ny + 34)
+    } else {
+      ctx.font = 'bold 80px system-ui, sans-serif'
+      ctx.fillStyle = '#525252'
+      ctx.textAlign = 'center'
+      ctx.fillText('--', TX / 2, ny)
+      ctx.textAlign = 'left'
+    }
+
+    const freqStr = frequency ? `${frequency.toFixed(1)} Hz` : '-- Hz'
+    const ctStr = ok ? `${note.cents > 0 ? '+' : ''}${note.cents} ct` : '-- ct'
+    ctx.font = '26px ui-monospace, monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-
-    ctx.font = 'bold 80px system-ui, sans-serif'
-    ctx.fillStyle = ok ? '#ffffff' : '#525252'
-    ctx.fillText(`${note.name}${note.octave}`, TX / 2, ny)
-
-    ctx.font = '32px ui-monospace, monospace'
     ctx.fillStyle = '#a3a3a3'
-    ctx.fillText(frequency ? `${frequency.toFixed(1)} hz` : '-- hz', TX / 2, ny + 95)
-
-    ctx.font = '28px ui-monospace, monospace'
-    const ct = ok ? `${note.cents > 0 ? '+' : ''}${note.cents} ct` : '-- ct'
+    ctx.fillText(freqStr, TX / 2 - 80, ny + 100)
     ctx.fillStyle = ok && Math.abs(note.cents) < 5 ? '#22c55e' : '#a3a3a3'
-    ctx.fillText(ct, TX / 2, ny + 140)
+    ctx.fillText(ctStr, TX / 2 + 80, ny + 100)
 
-    const my = ny + 140
-    const sw = Math.floor(TX * 0.4 / SEG)
+    const my = ny + 180
+    const sw = Math.round(cSize / SEG)
     const mw = sw * SEG
     const mx = (TX - mw) / 2
     const ctr = Math.floor(SEG / 2)
@@ -162,8 +202,8 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
       const isC = i === ctr
       const isA = i >= lo && i <= hi
       ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
-      const h = isC ? 42 : 18 + (i % 3) * 8
-      const y = my + (isC ? 0 : (42 - h) / 2)
+      const h = isC ? 48 : Math.round(36 + (i % 3) * 8)
+      const y = my + (isC ? 0 : (48 - h) / 2)
       const r = (sw - 2) / 2
       ctx.beginPath()
       ctx.roundRect(mx + i * sw, y, sw - 2, h, r)
@@ -171,16 +211,16 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     }
 
     const tune = Math.abs(note.cents) < 5
-    ctx.font = '14px ui-monospace, monospace'
+    ctx.font = '15px ui-monospace, monospace'
     ctx.textAlign = 'left'
     ctx.fillStyle = '#737373'
-    ctx.fillText('-50', mx, my + 48)
+    ctx.fillText('-50', mx, my + 54)
     ctx.textAlign = 'center'
     ctx.fillStyle = tune ? '#ffffff' : '#737373'
-    ctx.fillText('0', TX / 2, my + 48)
+    ctx.fillText('0', TX / 2, my + 54)
     ctx.textAlign = 'right'
     ctx.fillStyle = '#737373'
-    ctx.fillText('+50', mx + mw, my + 48)
+    ctx.fillText('+50', mx + mw, my + 54)
 
     tex.needsUpdate = true
   })
@@ -200,8 +240,8 @@ function SceneContent(props: Props) {
   const [pressedBtn, setPressedBtn] = useState<BtnId | null>(null)
 
   const scale = useMemo(() => {
-    const pad = 0.20
-    return Math.min(viewport.width * (1 - pad) / SW, viewport.height * (1 - pad) / SH)
+    const pad = 0.40
+    return Math.min(viewport.width * (1 - pad) / SW, viewport.height * (1 - pad) / SH) * 1.25
   }, [viewport.width, viewport.height])
 
   const buttonHitRef = useRef(false)
