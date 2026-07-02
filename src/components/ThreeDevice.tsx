@@ -148,8 +148,8 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     ctx.fillStyle = ok && Math.abs(note.cents) < 5 ? '#22c55e' : '#a3a3a3'
     ctx.fillText(ct, TX / 2, ny + 140)
 
-    const my = ny + 200
-    const sw = Math.floor(TX * 0.72 / SEG)
+    const my = ny + 140
+    const sw = Math.floor(TX * 0.4 / SEG)
     const mw = sw * SEG
     const mx = (TX - mw) / 2
     const ctr = Math.floor(SEG / 2)
@@ -162,10 +162,11 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
       const isC = i === ctr
       const isA = i >= lo && i <= hi
       ctx.fillStyle = isC ? (isA ? '#ffffff' : '#737373') : isA ? '#ffffff' : '#404040'
-      const h = isC ? 26 : 10 + (i % 3) * 3
-      const y = my + (isC ? 0 : (26 - h) / 2)
+      const h = isC ? 42 : 18 + (i % 3) * 8
+      const y = my + (isC ? 0 : (42 - h) / 2)
+      const r = (sw - 2) / 2
       ctx.beginPath()
-      ctx.roundRect(mx + i * sw, y, sw - 2, h, 4)
+      ctx.roundRect(mx + i * sw, y, sw - 2, h, r)
       ctx.fill()
     }
 
@@ -173,13 +174,13 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     ctx.font = '14px ui-monospace, monospace'
     ctx.textAlign = 'left'
     ctx.fillStyle = '#737373'
-    ctx.fillText('-50', mx, my + 34)
+    ctx.fillText('-50', mx, my + 48)
     ctx.textAlign = 'center'
     ctx.fillStyle = tune ? '#ffffff' : '#737373'
-    ctx.fillText('0', TX / 2, my + 34)
+    ctx.fillText('0', TX / 2, my + 48)
     ctx.textAlign = 'right'
     ctx.fillStyle = '#737373'
-    ctx.fillText('+50', mx + mw, my + 34)
+    ctx.fillText('+50', mx + mw, my + 48)
 
     tex.needsUpdate = true
   })
