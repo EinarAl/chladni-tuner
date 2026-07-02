@@ -167,15 +167,13 @@ function ScreenCanvas({ frequency }: { frequency: number | null }) {
     if (grid) {
       const elapsed = (performance.now() - t0.current) / 1000
       let blend: number | undefined
-      let noise: number | undefined
       if (prevGrid && transitionStart !== null) {
         const dt = performance.now() - transitionStart
         if (dt < 600) {
           blend = dt / 600
-          noise = (1 - blend) * 14
         }
       }
-      const img = applyAnimatedDither(grid, gridSize, elapsed, prevGrid, blend, noise)
+      const img = applyAnimatedDither(grid, gridSize, elapsed, prevGrid, blend)
       if (img) {
         const tc = tmp.getContext('2d')
         if (tc) {

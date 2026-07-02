@@ -27,17 +27,15 @@ export default function ChladniCanvas({ frequency }: Props) {
       const elapsed = (performance.now() - t0Ref.current) / 1000
 
       let blend: number | undefined
-      let noiseBoost: number | undefined
 
       if (prevGrid && transitionStart !== null) {
         const dt = performance.now() - transitionStart
         if (dt < TRANSITION_MS) {
           blend = dt / TRANSITION_MS
-          noiseBoost = (1 - blend) * 14
         }
       }
 
-      const imageData = applyAnimatedDither(grid, gridSize, elapsed, prevGrid, blend, noiseBoost)
+      const imageData = applyAnimatedDither(grid, gridSize, elapsed, prevGrid, blend)
       ctx.putImageData(imageData, 0, 0)
       rafRef.current = requestAnimationFrame(frame)
     }
