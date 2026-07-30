@@ -16,6 +16,7 @@ export function applyAnimatedDither(
   prevGrid?: Float32Array | null,
   blend?: number,
   noiseBoost?: number,
+  invert = false,
 ): ImageData {
   const imageData = new ImageData(gridSize, gridSize);
   const boost = noiseBoost ?? 0;
@@ -44,7 +45,8 @@ export function applyAnimatedDither(
 
       const rawThreshold = BAYER_8[y % 8][x % 8] + noise;
       const threshold = Math.max(0, rawThreshold) / 64;
-      const output = inverted > threshold ? 255 : 0;
+      let output = inverted > threshold ? 255 : 0;
+      if (invert) output = 255 - output;
 
       const pixelIdx = idx * 4;
       imageData.data[pixelIdx] = output;
