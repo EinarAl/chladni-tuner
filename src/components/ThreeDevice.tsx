@@ -559,7 +559,7 @@ function SceneContent(props: Props) {
           <mesh geometry={toggleGeo} position={[0, 0, pressedBtn === 'toggle' ? -3 : 0]}
             onPointerDown={(e) => { e.stopPropagation(); buttonHitRef.current = true; setPressedBtn('toggle'); handleAction('toggle') }}
             onPointerUp={() => setPressedBtn(null)} onPointerLeave={() => setPressedBtn(null)}>
-            <meshPhysicalMaterial color="#1a1a2e" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
+            <meshPhysicalMaterial color="#262626" metalness={0.1} roughness={0.5} side={THREE.DoubleSide} />
           </mesh>
           <ButtonIcon id="toggle" size={72} position={[0, 0, 25 + (pressedBtn === 'toggle' ? -3 : 0)]} />
         </group>
