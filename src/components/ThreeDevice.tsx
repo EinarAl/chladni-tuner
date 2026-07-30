@@ -14,6 +14,7 @@ interface Props {
   rollY: MotionValue<number>
   frequency: number | null
   mode: Mode
+  micDenied: boolean
   onModeChange: (m: Mode) => void
   onStepUp: () => void
   onStepDown: () => void
@@ -430,7 +431,7 @@ function ScreenCanvas({ frequency, centsOffset, settingsMode, settingsSelection,
 }
 
 function SceneContent(props: Props) {
-  const { rollX, rollY, frequency, mode, onModeChange, onStepUp, onStepDown, onCentUp, onCentDown, onOctaveUp, onOctaveDown, centsOffset,   settingsMode, settingsSelection, simDropdownOpen, simDropdownSelection, invert, simulation, onSettingsToggle, onSettingsSelect, onSettingsUp, onSettingsDown } = props
+  const { rollX, rollY, frequency, mode, micDenied, onModeChange, onStepUp, onStepDown, onCentUp, onCentDown, onOctaveUp, onOctaveDown, centsOffset,   settingsMode, settingsSelection, simDropdownOpen, simDropdownSelection, invert, simulation, onSettingsToggle, onSettingsSelect, onSettingsUp, onSettingsDown } = props
   const rotatorRef = useRef<THREE.Group>(null)
   const { viewport, gl } = useThree()
   const [pressedBtn, setPressedBtn] = useState<BtnId | null>(null)
@@ -534,12 +535,19 @@ function SceneContent(props: Props) {
             <ButtonIcon id={b.id} size={40} position={[b.pos[0], b.pos[1], SURFACE_Z + 25 + (pressedBtn === b.id ? -3 : 0)]} />
             <mesh position={[b.pos[0], b.pos[1] - 27.5, SURFACE_Z + 21 + (pressedBtn === b.id ? -3 : 0)]}>
               <sphereGeometry args={[4, 16, 12]} />
-              <meshPhysicalMaterial
-                color={!settingsMode && mode === b.id ? '#00ff88' : '#1a1a2e'}
-                emissive="#00ff88"
-                emissiveIntensity={!settingsMode && mode === b.id ? 0.6 : 0}
-                metalness={0.15} roughness={0.35}
-              />
+              {(() => {
+                const isActive = !settingsMode && mode === b.id
+                const isTunerMicDenied = isActive && b.id === 'tuner' && micDenied
+                const ledColor = isTunerMicDenied ? '#ff3355' : isActive ? '#00ff88' : '#1a1a2e'
+                return (
+                  <meshPhysicalMaterial
+                    color={ledColor}
+                    emissive={ledColor}
+                    emissiveIntensity={!isTunerMicDenied && !isActive ? 0 : 0.6}
+                    metalness={0.15} roughness={0.35}
+                  />
+                )
+              })()}
             </mesh>
           </group>
         ))}

@@ -6,6 +6,7 @@ export interface PitchDetectionState {
   isListening: boolean
   frequency: number | null
   note: NoteResult
+  micDenied: boolean
 }
 
 export function usePitchDetection() {
@@ -13,6 +14,7 @@ export function usePitchDetection() {
     isListening: false,
     frequency: null,
     note: { name: '--', octave: 0, frequency: 0, cents: 0 },
+    micDenied: false,
   })
 
   const ctxRef = useRef<AudioContext | null>(null)
@@ -54,19 +56,25 @@ export function usePitchDetection() {
     const ctx = new AudioContext()
     ctxRef.current = ctx
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    streamRef.current = stream
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
 
-    const source = ctx.createMediaStreamSource(stream)
-    sourceRef.current = source
+      const source = ctx.createMediaStreamSource(stream)
+      sourceRef.current = source
 
-    const analyser = ctx.createAnalyser()
-    analyser.fftSize = 2048
-    analyserRef.current = analyser
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 2048
+      analyserRef.current = analyser
 
-    source.connect(analyser)
-    setState(prev => ({ ...prev, isListening: true }))
-    rafRef.current = requestAnimationFrame(analyze)
+      source.connect(analyser)
+      setState(prev => ({ ...prev, isListening: true, micDenied: false }))
+      rafRef.current = requestAnimationFrame(analyze)
+    } catch {
+      setState(prev => ({ ...prev, isListening: false, micDenied: true }))
+      ctx.close()
+      ctxRef.current = null
+    }
   }, [analyze])
 
   const stop = useCallback(() => {
@@ -82,6 +90,7 @@ export function usePitchDetection() {
       isListening: false,
       frequency: null,
       note: { name: '--', octave: 0, frequency: 0, cents: 0 },
+      micDenied: false,
     })
   }, [])
 

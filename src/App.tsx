@@ -102,12 +102,13 @@ export default function App() {
 
   return (
     <div className="h-dvh w-full bg-[#0b1a2e]">
-      <ThreeDevice
-        rollX={smoothRollX}
-        rollY={smoothRollY}
-        frequency={chladniFreq}
-        mode={mode}
-        onModeChange={handleModeChange}
+        <ThreeDevice
+          rollX={smoothRollX}
+          rollY={smoothRollY}
+          frequency={chladniFreq}
+          mode={mode}
+          micDenied={pitch.micDenied}
+          onModeChange={handleModeChange}
         onStepUp={osc.stepUp}
         onStepDown={osc.stepDown}
         onCentUp={mode === 'sound' ? osc.centUp : undefined}
