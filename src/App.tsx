@@ -101,7 +101,7 @@ export default function App() {
   const smoothRollY = useSpring(rollY, { stiffness: 150, damping: 20 })
 
   return (
-    <div className="h-dvh w-full bg-[#0b1a2e]">
+    <div className="h-dvh w-full bg-[#0b1a2e] overflow-hidden">
         <ThreeDevice
           rollX={smoothRollX}
           rollY={smoothRollY}
