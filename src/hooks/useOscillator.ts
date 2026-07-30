@@ -26,9 +26,8 @@ export function useOscillator() {
     }
   }, [])
 
-  const start = useCallback(async (freq: number) => {
+  const start = useCallback((freq: number) => {
     const ctx = new AudioContext()
-    if (ctx.state === 'suspended') await ctx.resume()
     ctxRef.current = ctx
     const osc = ctx.createOscillator()
     osc.type = 'sine'
