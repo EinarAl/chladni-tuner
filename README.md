@@ -2,6 +2,8 @@
 
 A guitar tuner that renders real-time Chladni standing wave patterns on a 3D device, reacting to live microphone input or a built-in oscillator. Built with React Three Fiber, the app combines pitch detection, physical acoustics modeling (Rayleigh–Ritz method), and ordered dithering.
 
+**Live demo:** [chladni-tuner.vercel.app](https://chladni-tuner.vercel.app)
+
 ## Features
 
 - **Three simulation modes**: cos approximation (instant, no precomputed data), Rayleigh–Ritz free-edge (93 precomputed modes), Rayleigh–Ritz clamped (166 precomputed modes)
