@@ -116,7 +116,7 @@ function ButtonIcon({ id, size, position }: { id: BtnId; size: number; position:
       toggle: 'settings',
     }
     const iconId = iconMap[id] ?? id
-    fetch(`/icons/${iconId}.svg`)
+    fetch(`${import.meta.env.BASE_URL}icons/${iconId}.svg`)
       .then(r => r.text())
       .then(svg => {
         if (cancelled) return

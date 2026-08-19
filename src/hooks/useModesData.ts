@@ -52,7 +52,7 @@ async function loadModes(filename: string, clamped: boolean): Promise<ModesData 
 export function useModesData(sim: Simulation): { data: ModesData | null; isLoading: boolean } {
   const [state, setState] = useState<{ data: ModesData | null; isLoading: boolean }>(() => {
     if (sim === 'cos') return { data: null, isLoading: false }
-    const filename = sim === 'ritz-clamped' ? '/modes_clamped.bin' : '/modes.bin'
+    const filename = sim === 'ritz-clamped' ? `${import.meta.env.BASE_URL}modes_clamped.bin` : `${import.meta.env.BASE_URL}modes.bin`
     const cached = cache.get(filename)
     return { data: cached ?? null, isLoading: !cached }
   })
@@ -63,7 +63,7 @@ export function useModesData(sim: Simulation): { data: ModesData | null; isLoadi
       return
     }
     const clamped = sim === 'ritz-clamped'
-    const filename = clamped ? '/modes_clamped.bin' : '/modes.bin'
+    const filename = clamped ? `${import.meta.env.BASE_URL}modes_clamped.bin` : `${import.meta.env.BASE_URL}modes.bin`
     const cached = cache.get(filename)
     if (cached) {
       setState({ data: cached, isLoading: false })
